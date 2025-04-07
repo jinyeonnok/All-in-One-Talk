@@ -1,0 +1,11 @@
+{% extends 'base.html' %}
+
+{% block title %}명령 전송 완료 - MoaTalk{% endblock %}
+
+{% block content %}
+<div class="text-center">
+    <h2 class="mb-4">✅ 명령 전송 완료</h2>
+    <p class="lead">명령이 성공적으로 저장되었습니다.</p>
+    <a href="{% url 'create_command' %}" class="btn btn-outline-primary mt-3">📩 새 명령 만들기</a>
+</div>
+{% endblock %}

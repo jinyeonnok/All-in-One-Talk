@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <title>친구 불러오는 중...</title>
+    <style>
+        body {
+            font-family: 'Arial', sans-serif;
+            background-color: #f9f9f9;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100vh;
+            margin: 0;
+            text-align: center;
+        }
+        .container {
+            background-color: white;
+            padding: 2rem 3rem;
+            border-radius: 16px;
+            box-shadow: 0 10px 20px rgba(0,0,0,0.1);
+        }
+        .spinner {
+            margin: 20px auto;
+            border: 6px solid #f3f3f3;
+            border-top: 6px solid #4CAF50;
+            border-radius: 50%;
+            width: 50px;
+            height: 50px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .message {
+            font-size: 1.2rem;
+            color: #333;
+            margin-top: 1rem;
+        }
+
+        /* 숨겨진 카카오톡 공유 버튼 */
+        #kakaotalk-sharing-btn {
+            display: none;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="spinner"></div>
+        <div class="message">
+            친구 불러오기가 진행중입니다.<br><br>
+            로그인 후 진행이 완료될 때까지 <strong>컴퓨터 조작을 잠시 멈춰주세요.</strong>
+        </div>
+    </div>
+
+    <script>
+        const BASE_URL = '{{ request.scheme }}://{{ request.get_host }}';
+        const IMAGE_URL = `${BASE_URL}/static/images/아이콘.png`;
+      </script>
+
+    <script>
+    (async () => {
+      // 1. Kakao SDK 로드 (필요시)
+      if (!window.Kakao) {
+        await new Promise((resolve, reject) => {
+          const script = document.createElement('script');
+          script.src = 'https://t1.kakaocdn.net/kakao_js_sdk/2.7.4/kakao.min.js';
+          script.integrity = 'sha384-DKYJZ8NLiK8MN4/C5P2dtSmLQ4KwPaoqAfyA/DfmEc1VDxu4yyC7wy6K1Hs90nka';
+          script.crossOrigin = 'anonymous';
+          script.onload = resolve;
+          script.onerror = reject;
+          document.head.appendChild(script);
+        });
+      }
+
+      // 2. Kakao SDK 초기화 (이미 되어 있지 않았다면)
+      if (!Kakao.isInitialized()) {
+        // Kakao.init('05857a97effa2ead4a49bbd7d242273f'); // 당신의 JavaScript 키
+        Kakao.init('d54c483d3bc6806712fbd0fb72d32e06'); // 당신의 JavaScript 키
+      }
+
+      // 3. 버튼이 없으면 DOM에 추가
+      if (!document.querySelector('#kakaotalk-sharing-btn')) {
+        const link = document.createElement('a');
+        link.id = 'kakaotalk-sharing-btn';
+        link.href = 'javascript:;';
+        link.style.display = 'none'; // JS에서도 한번 더 안전하게 숨김
+        link.innerHTML = `<img src="https://developers.kakao.com/assets/img/about/logos/kakaotalksharing/kakaotalk_sharing_btn_medium.png" alt="카카오톡 공유" />`;
+        document.body.appendChild(link);
+      }
+
+      // 4. 공유 버튼 생성
+      Kakao.Share.createDefaultButton({
+        container: '#kakaotalk-sharing-btn',
+        objectType: 'feed',
+        content: {
+          title: '친구 불러오기용 화면입니다.',
+          description: '작업을 멈추고 기다려주세요.',
+          imageUrl: 'IMAGE_URL',  // ✅ 여기서 동적으로 삽입!
+        //   imageUrl: IMAGE_URL,  // ✅ 여기서 동적으로 삽입!
+          link: {
+            mobileWebUrl: 'https://developers.kakao.com',
+            webUrl: 'https://developers.kakao.com',
+          },
+        },
+        social: {
+          likeCount: 286,
+          commentCount: 45,
+          sharedCount: 845,
+        },
+        buttons: [
+          {
+            title: '웹으로 보기',
+            link: {
+              mobileWebUrl: 'https://developers.kakao.com',
+              webUrl: 'https://developers.kakao.com',
+            },
+          },
+          {
+            title: '앱으로 보기',
+            link: {
+              mobileWebUrl: 'https://developers.kakao.com',
+              webUrl: 'https://developers.kakao.com',
+            },
+          },
+        ],
+      });
+    })();
+    </script>
+</body>
+</html>

@@ -1,0 +1,9 @@
+docker run -d ^
+  --name moa-postgres ^
+  -e POSTGRES_DB=moa-db ^
+  -e POSTGRES_USER=moatalk ^
+  -e POSTGRES_PASSWORD=Qlalfdldi1! ^
+  -e POSTGRES_HOST_AUTH_METHOD=md5 ^
+  -p 5434:5432 ^
+  -v moatalk:/var/lib/postgresql/data ^
+  postgres:16-alpine

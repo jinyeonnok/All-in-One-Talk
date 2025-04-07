@@ -1,0 +1,225 @@
+{% extends 'base.html' %}
+
+{% block extra_head %}
+<link href="https://cdn.jsdelivr.net/npm/select2@4.1.0-rc.0/dist/css/select2.min.css" rel="stylesheet" />
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/flatpickr.min.css">
+<link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/flatpickr/dist/themes/airbnb.css">  <!-- 예쁜 테마 -->
+
+<style>
+    select option {
+        padding: 5px 8px;
+        background-repeat: no-repeat;
+        background-size: 30px 30px;
+        background-position: 5px center;
+        padding-left: 40px;
+    }
+
+    @media (max-width: 768px) {
+        .row > div {
+            margin-bottom: 15px;
+        }
+    }
+
+    .btn-center {
+        display: flex;
+        justify-content: center;
+    }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="container mt-4">
+    <h2>📩 명령 생성</h2>
+
+    <form method="post" enctype="multipart/form-data">
+        {% csrf_token %}
+
+        <div class="mb-3">
+            <label for="id_message">메시지 내용</label>
+            {{ form.message }}
+        </div>
+
+        <div class="mb-3">
+            <label for="id_image">이미지 첨부 (선택)</label>
+            {{ form.image }}
+        </div>
+        <!-- <div class="mb-3">
+            <label for="id_scheduled_time">예약 전송 시간 (선택)</label>
+            <input type="text" id="id_scheduled_time" name="scheduled_time" class="form-control">
+            <small class="text-muted">예약하지 않으면 즉시 전송됩니다.</small>
+        </div> -->
+        
+        <div class="mb-3">
+            <label>전송 대상 선택</label>
+            <input type="text" id="searchInput" class="form-control mb-2" placeholder="친구 이름 검색">
+            <div class="row">
+                <div class="col-md-5">
+                    <select id="available" multiple class="form-select" style="height: 300px;"></select>
+                </div>
+
+                <div class="col-md-2 d-flex flex-column justify-content-center align-items-center gap-2 mt-2 mt-md-0">
+                    <button type="button" id="add" class="btn btn-outline-primary w-100">→ 선택</button>
+                    <button type="button" id="remove" class="btn btn-outline-danger w-100">← 제거</button>
+                </div>
+
+                <div class="col-md-5">
+                    <select id="recipients" name="recipients" multiple class="form-select" style="height: 300px;"></select>
+                </div>
+            </div>
+        </div>
+
+        <div class="mb-3">
+            <label for="id_scheduled_time">예약 전송 시간 (선택)</label>
+            {{ form.scheduled_time }}
+            <small class="text-muted">지정하지 않으면 즉시 전송됩니다.</small>
+        </div>
+        <div class="btn-center mt-4">
+            <button type="submit" class="btn btn-primary px-5">명령 전송</button>
+        </div>
+
+    </form>
+</div>
+{% endblock %}
+
+{% block extra_script %}
+
+<script src="https://cdn.jsdelivr.net/npm/flatpickr"></script>
+<script src="https://cdn.jsdelivr.net/npm/flatpickr/dist/l10n/ko.js"></script>
+<script>
+  flatpickr("#id_scheduled_time", {
+      enableTime: true,
+      enableSeconds: true,  // ✅ 초까지 설정 가능
+      dateFormat: "Y-m-d H:i:S",  // ✅ 초까지 반영
+      time_24hr: false,
+      locale: "ko",
+      minuteIncrement: 1,
+      secondIncrement: 1,  // ⏱ 원하면 초 단위도 조절 가능
+      defaultDate: new Date()  // ✅ 정확히 지금 시간으로 초기화
+  });
+</script>
+
+<script src="https://cdn.jsdelivr.net/npm/jquery@3.6.0/dist/jquery.min.js"></script>
+<script>
+    
+    const fallbackImage = "https://cdn-icons-png.flaticon.com/512/149/149071.png";
+    const available = document.getElementById("available");
+    const recipients = document.getElementById("recipients");
+    const searchInput = document.getElementById("searchInput");
+    let offset = 0;
+    const limit = 50;
+    let loading = false;
+    let allLoaded = false;
+    let allFriends = [];
+
+    function applyImageStyle(selectBox) {
+        Array.from(selectBox.options).forEach(option => {
+            let imgUrl = option.dataset.img;
+            if (!imgUrl || imgUrl === "없음") {
+                imgUrl = fallbackImage;
+            }
+            option.style.backgroundImage = `url('${imgUrl}')`;
+        });
+    }
+
+    function fetchFriends(search = "", reset = false) {
+        if (loading || allLoaded) return;
+        loading = true;
+
+        fetch(`/chat/api/friends/?offset=${offset}&limit=${limit}&search=${encodeURIComponent(search)}`)
+            .then(res => res.json())
+            .then(data => {
+                if (reset) {
+                    available.innerHTML = '';
+                    offset = 0;
+                    allFriends = [];
+                    allLoaded = false;
+                }
+
+                if (data.friends.length === 0) {
+                    allLoaded = true;
+                    return;
+                }
+
+                data.friends.forEach(f => {
+                    const opt = document.createElement("option");
+                    opt.value = f.id;
+                    opt.textContent = f.name;
+                    opt.dataset.img = f.image_url || '';
+                    available.appendChild(opt);
+                    allFriends.push(opt);
+                });
+                offset += limit;
+                applyImageStyle(available);
+            })
+            .finally(() => loading = false);
+    }
+
+    // 선택 → 오른쪽
+    document.getElementById("add").addEventListener("click", function () {
+        Array.from(available.selectedOptions).forEach(option => {
+            const clone = option.cloneNode(true);
+            clone.selected = true; // ✅ 필수: 오른쪽에 추가되면 selected 설정
+            recipients.appendChild(clone);
+            option.remove();
+            allFriends = allFriends.filter(o => o.value !== option.value);
+        });
+        applyImageStyle(recipients);
+    });
+
+    // 제거 → 왼쪽
+    document.getElementById("remove").addEventListener("click", function () {
+        Array.from(recipients.selectedOptions).forEach(option => {
+            const clone = option.cloneNode(true);
+            clone.selected = false;  // ✅ 필수: 제거 시 selected 해제
+            available.appendChild(clone);
+            allFriends.push(clone);
+            option.remove();
+        });
+        applyImageStyle(available);
+    });
+
+    // 검색 필터
+    let debounceTimer = null;
+    searchInput.addEventListener("input", function () {
+        clearTimeout(debounceTimer);
+        debounceTimer = setTimeout(() => {
+            const keyword = this.value.trim();
+            offset = 0;
+            allLoaded = false;
+            fetchFriends(keyword, true);
+        }, 300);
+    });
+
+    // 무한 스크롤
+    available.addEventListener("scroll", () => {
+        if (available.scrollTop + available.clientHeight >= available.scrollHeight - 10) {
+            fetchFriends();
+        }
+    });
+
+    // 더블클릭 시 → 오른쪽으로 이동
+    available.addEventListener("dblclick", function (e) {
+        const selectedOption = e.target;
+        if (selectedOption.tagName.toLowerCase() === "option") {
+            const clone = selectedOption.cloneNode(true);
+            clone.selected = true;
+            recipients.appendChild(clone);
+            selectedOption.remove();
+            allFriends = allFriends.filter(o => o.value !== selectedOption.value);
+            applyImageStyle(recipients);
+        }
+    });
+
+    // 폼 제출 시 오른쪽 모두 선택되도록
+    document.querySelector("form").addEventListener("submit", function () {
+        Array.from(recipients.options).forEach(opt => opt.selected = true);
+    });
+
+    document.addEventListener("DOMContentLoaded", function () {
+        fetchFriends();
+    });
+
+
+
+</script>
+{% endblock %}

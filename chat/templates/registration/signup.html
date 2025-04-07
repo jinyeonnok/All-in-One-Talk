@@ -1,0 +1,58 @@
+{% extends 'base.html' %}
+{% load widget_tweaks %}
+
+{% block title %}회원가입 - MoaTalk{% endblock %}
+
+{% block content %}
+<div class="d-flex justify-content-center">
+    <div class="w-100" style="max-width: 420px;">
+        <div class="card shadow-sm p-4">
+            <h2 class="text-center mb-4">📝 회원가입</h2>
+
+            <form method="post">
+                {% csrf_token %}
+
+                <div class="mb-3">
+                    <label for="id_username" class="form-label">아이디</label>
+                    {{ form.username|add_class:"form-control" }}
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_email" class="form-label">이메일</label>
+                    {{ form.email|add_class:"form-control" }}
+                    <div class="form-text text-danger">
+                        반드시 카카오 로그인 계정과 동일해야 합니다.
+                    </div>
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_password1" class="form-label">비밀번호</label>
+                    {{ form.password1|add_class:"form-control" }}
+                </div>
+
+                <div class="mb-3">
+                    <label for="id_password2" class="form-label">비밀번호 확인</label>
+                    {{ form.password2|add_class:"form-control" }}
+                </div>
+
+                {% if form.errors %}
+                    <div class="alert alert-danger mt-3">
+                        <ul class="mb-0">
+                            {% for field in form %}
+                                {% for error in field.errors %}
+                                    <li>{{ error }}</li>
+                                {% endfor %}
+                            {% endfor %}
+                            {% for error in form.non_field_errors %}
+                                <li>{{ error }}</li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+
+                <button type="submit" class="btn btn-success w-100">가입하기</button>
+            </form>
+        </div>
+    </div>
+</div>
+{% endblock %}
